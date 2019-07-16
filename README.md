@@ -1,6 +1,6 @@
 # 여행지 Classification Model
 
-데이터셋 작업 중
+텍스트 데이터가 어느 여행지에 대한 내용인지 분류하는 모델.
 
 # Dataset
 
@@ -14,6 +14,16 @@
 ```
 /data/blog/raw/[키워드 조합]/[데이터 파일들]
 ```
+
+# Progressing...
+
+- 데이터셋 작업
+
+# TODO
+
+- 모델링
+- 성능 확인
+- 파티
 
 # Contacts
 

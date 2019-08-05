@@ -1,25 +1,25 @@
 from keras.preprocessing import sequence
 from keras.models import Sequential
-from keras.layers import Dense, Conv1D, MaxPooling1D, Flatten, Dropout, Embedding
+from keras.layers import Reshape, Dense, Conv2D, MaxPooling2D, Flatten, Dropout, Embedding
 from keras.utils import np_utils
 from numpy import array
-import matplotlib.pyplot as plt
 import numpy as np
 import glob
 import os
+from keras import backend as K
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # for Mac
 
 VOCA_PATH = "/Users/JangwonPark/Documents/tensorflow/allvocaset.csv"
 DATA_PATH = "/Users/JangwonPark/Documents/tensorflow/data_sample_small/raw"
 DETAIL_PATH = '/blog.naver.com/*.txt'
 
-embedding_size, cnn_kerner_size = 32, 10
+embedding_size, cnn_kerner_size = 32, (10, 5)
 verbose, epochs, batch_size = 0, 20, 32
 
 
 def npIndex(npArray, object):
     result = np.where(npArray==object)
-    return np.array(result).tolist()[0][0]
+    return np.array(result).tolist()[0][0] + 1
 
 
 def findFolders(path):
@@ -100,31 +100,24 @@ split_idx = int(len(x_data) * 0.7)
 x_train, y_train = x_data[:split_idx], y_data[:split_idx]
 x_validation, y_validation = x_data[split_idx:], y_data[split_idx:]
 
-voca_length, input_length, label_length = len(voca_arr)+1, len(x_data[0]), len(label_names)
+voca_length, input_length, label_length = len(voca_arr) + 1, len(x_data[0]), len(label_names)
+
 
 model = Sequential()
 model.add(Embedding(voca_length, embedding_size, input_length=input_length))
-model.add(Conv1D(filters=32, kernel_size=cnn_kerner_size, activation='relu', input_shape=x_train.shape))
-model.add(MaxPooling1D(pool_size=2))
-model.add(Conv1D(filters=64, kernel_size=cnn_kerner_size, activation='relu', input_shape=x_train.shape))
-model.add(MaxPooling1D(pool_size=2))
+model.add(Reshape((input_length, embedding_size, 1)))
+model.add(Conv2D(filters=2*32, kernel_size=cnn_kerner_size, activation='relu', input_shape=x_train.shape, padding='valid', strides=1))
+model.add(MaxPooling2D(pool_size=2))
+model.add(Conv2D(filters=3*32, kernel_size=cnn_kerner_size, activation='relu', padding='valid', strides=1))
+model.add(MaxPooling2D(pool_size=2))
 model.add(Flatten())
-model.add(Dense(1024, activation='relu'))
+model.add(Dense(512, activation='relu'))
 model.add(Dropout(0.25))
 model.add(Dense(label_length, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-history = model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=verbose, shuffle=True)
-
-ep = range(1, len(history.history['acc']) + 1)
-plt.plot(ep, history.history['loss'])
-plt.plot(ep, history.history['acc'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
+model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose=verbose, shuffle=True)
 
 print("Tranining Completed!")
 print('\nAccuracy: {:.4f}'.format(model.evaluate(x_validation, y_validation)[1]))
